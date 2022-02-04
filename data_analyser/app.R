@@ -15,14 +15,15 @@ about_page <- tabPanel(
 
 main_page <- tabPanel(
   title = "Analysis",
-  titlePanel("Analysis"),
+  titlePanel("MLMA Project"),
   sidebarLayout(
     sidebarPanel(
       title = "Inputs",
       fileInput("csv_input", "Select CSV File to Import", accept = ".csv"),
       selectInput("num_var_1", "Numerical Variable 1", choices = c(not_sel)),
       selectInput("num_var_2", "Numerical Variable 2", choices = c(not_sel)),
-      selectInput("fact_var", "Factor Variable", choices = c(not_sel)),
+      selectInput("fact_var", "Numerical variable 3", choices = c(not_sel)),
+      selectInput("fact_var2", "Factor Variable", choices = c(not_sel)),
       br(),
       actionButton("run_button", "Run Analysis", icon = icon("play"))
     ),
@@ -58,44 +59,44 @@ main_page <- tabPanel(
 )
 
 draw_plot_1 <- function(data_input, num_var_1, num_var_2, fact_var){
-    if(fact_var!=not_sel){
-      data_input[,(fact_var):= as.factor(data_input[,get(fact_var)])]
-    }
-    if(num_var_1 != not_sel & num_var_2 != not_sel & fact_var != not_sel){
-      ggplot(data = data_input,
-             aes_string(x = num_var_1, y = num_var_2, color = fact_var)) +
-        geom_point()
-    }
-    else if(num_var_1 != not_sel & num_var_2 != not_sel & fact_var == not_sel){
-      ggplot(data = data_input,
-             aes_string(x = num_var_1, y = num_var_2)) +
-        geom_point()
-    }
-    else if(num_var_1 != not_sel & num_var_2 == not_sel & fact_var != not_sel){
-      ggplot(data = data_input,
-             aes_string(x = fact_var, y = num_var_1)) +
-        geom_violin()
-    }
-    else if(num_var_1 == not_sel & num_var_2 != not_sel & fact_var != not_sel){
-      ggplot(data = data_input,
-             aes_string(x = fact_var, y = num_var_2)) +
-        geom_violin()
-    }
-    else if(num_var_1 != not_sel & num_var_2 == not_sel & fact_var == not_sel){
-      ggplot(data = data_input,
-             aes_string(x = num_var_1)) +
-        geom_histogram()
-    }
-    else if(num_var_1 == not_sel & num_var_2 != not_sel & fact_var == not_sel){
-      ggplot(data = data_input,
-             aes_string(x = num_var_2)) +
-        geom_histogram()
-    }
-    else if(num_var_1 == not_sel & num_var_2 == not_sel & fact_var != not_sel){
-      ggplot(data = data_input,
-             aes_string(x = fact_var)) +
-        geom_bar()
-    }
+  if(fact_var!=not_sel){
+    data_input[,(fact_var):= as.factor(data_input[,get(fact_var)])]
+  }
+  if(num_var_1 != not_sel & num_var_2 != not_sel & fact_var != not_sel){
+    ggplot(data = data_input,
+           aes_string(x = num_var_1, y = num_var_2, color = fact_var)) +
+      geom_point()
+  }
+  else if(num_var_1 != not_sel & num_var_2 != not_sel & fact_var == not_sel){
+    ggplot(data = data_input,
+           aes_string(x = num_var_1, y = num_var_2)) +
+      geom_point()
+  }
+  else if(num_var_1 != not_sel & num_var_2 == not_sel & fact_var != not_sel){
+    ggplot(data = data_input,
+           aes_string(x = fact_var, y = num_var_1)) +
+      geom_violin()
+  }
+  else if(num_var_1 == not_sel & num_var_2 != not_sel & fact_var != not_sel){
+    ggplot(data = data_input,
+           aes_string(x = fact_var, y = num_var_2)) +
+      geom_violin()
+  }
+  else if(num_var_1 != not_sel & num_var_2 == not_sel & fact_var == not_sel){
+    ggplot(data = data_input,
+           aes_string(x = num_var_1)) +
+      geom_histogram()
+  }
+  else if(num_var_1 == not_sel & num_var_2 != not_sel & fact_var == not_sel){
+    ggplot(data = data_input,
+           aes_string(x = num_var_2)) +
+      geom_histogram()
+  }
+  else if(num_var_1 == not_sel & num_var_2 == not_sel & fact_var != not_sel){
+    ggplot(data = data_input,
+           aes_string(x = fact_var)) +
+      geom_bar()
+  }
 }
 
 create_num_var_table <- function(data_input, num_var){
@@ -106,7 +107,7 @@ create_num_var_table <- function(data_input, num_var){
     statistic <- c("mean", "median", "5th percentile", "95th percentile",
                    "Shapiro statistic", "Shapiro p-value")
     value <- c(round(mean(col),2), round(median(col),2),
-                round(quantile(col, 0.05),2), round(quantile(col, 0.95),2),
+               round(quantile(col, 0.05),2), round(quantile(col, 0.95),2),
                norm_test$statistic, norm_test$p.value)
     data.table(statistic, value)
   }
@@ -143,8 +144,8 @@ create_combined_table <- function(data_input, num_var_1, num_var_2, fact_var){
 }
 
 ui <- navbarPage(
-  title = "Data Analyser",
-  theme = shinytheme('united'),
+  title = "MLMA Project",
+  theme = shinytheme('flatly'),
   main_page,
   about_page
 )
@@ -152,55 +153,55 @@ ui <- navbarPage(
 server <- function(input, output){
   
   options(shiny.maxRequestSize=10*1024^2) 
-
+  
   data_input <- reactive({
     req(input$csv_input)
     fread(input$csv_input$datapath)
   })
-
+  
   observeEvent(data_input(),{
     choices <- c(not_sel,names(data_input()))
     updateSelectInput(inputId = "num_var_1", choices = choices)
     updateSelectInput(inputId = "num_var_2", choices = choices)
     updateSelectInput(inputId = "fact_var", choices = choices)
   })
-
+  
   num_var_1 <- eventReactive(input$run_button,input$num_var_1)
   num_var_2 <- eventReactive(input$run_button,input$num_var_2)
   fact_var <- eventReactive(input$run_button,input$fact_var)
-
+  
   # plot
   
   plot_1 <- eventReactive(input$run_button,{
     draw_plot_1(data_input(), num_var_1(), num_var_2(), fact_var())
   })
-
+  
   output$plot_1 <- renderPlot(plot_1())
   
   # 1-d summary tables
-
+  
   output$num_var_1_title <- renderText(paste("Num Var 1:",num_var_1()))
-
+  
   num_var_1_summary_table <- eventReactive(input$run_button,{
     create_num_var_table(data_input(), num_var_1())
   })
-
+  
   output$num_var_1_summary_table <- renderTable(num_var_1_summary_table(),colnames = FALSE)
-
+  
   output$num_var_2_title <- renderText(paste("Num Var 2:",num_var_2()))
-
+  
   num_var_2_summary_table <- eventReactive(input$run_button,{
     create_num_var_table(data_input(), num_var_2())
   })
-
+  
   output$num_var_2_summary_table <- renderTable(num_var_2_summary_table(),colnames = FALSE)
-
+  
   output$fact_var_title <- renderText(paste("Factor Var:",fact_var()))
-
+  
   fact_var_summary_table <- eventReactive(input$run_button,{
     create_fact_var_table(data_input(), fact_var())
   })
-
+  
   output$fact_var_summary_table <- renderTable(fact_var_summary_table(),colnames = FALSE)
   
   # multi-d summary table
@@ -210,9 +211,8 @@ server <- function(input, output){
   })
   
   output$combined_summary_table <- renderTable(combined_summary_table())
-
+  
 }
 
 shinyApp(ui = ui, server = server)
 
-runApp("/Users/flatiron/Documents/R_Work/RShiny_Apps/data_analyser", display.mode = "showcase")
