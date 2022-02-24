@@ -8,7 +8,7 @@ library(readxl)
 library(stringr)
 library(tidyverse)
 library(xlsx)
-
+library(ggdag)
 
 not_sel <- "Not Selected"
 
@@ -60,6 +60,10 @@ main_page <- tabPanel(
           title = "Model Statistics II",
           verbatimTextOutput("model_summary_2")
         ),
+        tabPanel(
+          title = "DAG Visualition",
+          plotOutput("dag_visualization")
+        )
       )
     )
   )
@@ -124,7 +128,7 @@ create_num_var_table_2 <- function(data_input, num_var_1, num_var_2, num_var_3, 
     m2 <- data_input[,num_var_3[2]]
     m3 <- data_input[,num_var_3[3]]
     lv <- data_input[,fact_var]
-    # print(typeof(m1))
+    print(typeof(num_var_1))
     # write(typeof(m1), stdout())
     mat = matrix(ncol = 0, nrow = length(m1))
     m4=data.frame(mat)
@@ -141,6 +145,33 @@ create_num_var_table_2 <- function(data_input, num_var_1, num_var_2, num_var_3, 
     tmp2.boot<-boot.mlma(y=sim.111$y, data1=data2, boot=num_bootstrap_replicates,echo=F)
     summary(tmp2.boot) #Graphic Outputs
   }
+}
+
+create_dag_visualization <- function(num_var_1, num_var_2, num_var_3, fact_var){
+  tidy_ggdag <- dagify(
+    y ~ x + m1 + m2 + m3 + lv,
+    m1 ~ x + lv,
+    m2 ~ x + lv,
+    m3 ~ x + lv,
+    exposure = "x",
+    outcome = "y",
+    labels = c("x" = num_var_1, 
+              "y" = num_var_2,
+              "m1" = num_var_3[1],
+              "m2" = num_var_3[2],
+              "m3" = num_var_3[3],
+              "lv" = fact_var)
+  )
+
+  ggdag(tidy_ggdag)
+
+  #dag  <- dagify(y ~ x + z2 + w2 + w1,
+  #x ~ z1 + w1,
+  #z1 ~ w1 + v,
+  #z2 ~ w2 + v,
+  #w1 ~~ w2)
+
+  #ggdag(dag)
 }
 
 ui <- navbarPage(
@@ -215,6 +246,12 @@ server <- function(input, output){
   })
   
   output$model_summary_2 <- renderPrint(num_var_2_summary_table())
+
+  dag_visualization <- eventReactive(input$run_button,{
+    create_dag_visualization(num_var_1(),num_var_2(),num_var_3(),fact_var())
+  })
+
+  output$dag_visualization <- renderPlot(dag_visualization())
 
 }
 
