@@ -37,19 +37,19 @@ main_page <- tabPanel(
       selectInput("num_var_3", "Mediators", choices = c(not_sel), multiple = TRUE),
       selectInput("fact_var", "Level of X", choices = c(not_sel)),
 
-      selectInput("Transformation of predictor (level 1) --> Mediator (level 1)", "f10km", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+      selectInput("f10km", "Transformation of predictor (level 1) --> Mediator (level 1)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
       uiOutput("f10km_constant"),
-      selectInput("Transformation of predictor (level 1) --> Response", "f10y", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+      selectInput("f10y", "Transformation of predictor (level 1) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
       uiOutput("f10y_constant"),
-      selectInput("Transformation of mediator (level 1) --> Response", "f20ky", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+      selectInput("f20ky", "Transformation of mediator (level 1) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
       uiOutput("f20ky_constant"),
-      selectInput("Transformation of predictor (level 2) --> Response", "f01y", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+      selectInput("f01y", "Transformation of predictor (level 2) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
       uiOutput("f01y_constant"),
-      selectInput("Transformation of mediator (level 2) --> Response", "f02ky", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+      selectInput("f02ky", "Transformation of mediator (level 2) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
       uiOutput("f02ky_constant"),
-      selectInput("Transformation of predictor (level 2) --> Mediator (level 1)", "f01km1", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+      selectInput("f01km1", "Transformation of predictor (level 2) --> Mediator (level 1)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
       uiOutput("f01km1_constant"),
-      selectInput("Transformation of predictor (level 2) --> Mediator (level 2)", "f01km2", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+      selectInput("f01km2", "Transformation of predictor (level 2) --> Mediator (level 2)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
       uiOutput("f01km2_constant"),
 
       numericInput(
@@ -126,7 +126,11 @@ draw_plot_1 <- function(data_input, num_var_1, num_var_2, num_var_3, fact_var, n
     sim.111=list(x=x,m=m,y=y,level=lv)
 
     transformation_format <- function(input, input_constant){
-      if(input == "Log Transformation")
+      if(input == "Linear")
+      {
+        return("x")
+      }
+      else if(input == "Log Transformation")
       {
         return(paste("log(x+", input_constant, ")", sep = ""))
       }
@@ -140,42 +144,15 @@ draw_plot_1 <- function(data_input, num_var_1, num_var_2, num_var_3, fact_var, n
       }
     }
 
-    if(cf01y == "Linear")
-    {
-      f01y <- "x"
-    }
-    else
-    {
-      f01y <- transformation_format(cf01y,cf01y_constant)
-    }
+    f01y <- transformation_format(cf01y, cf01y_constant)
 
-    if(cf10y == "Linear")
-    {
-      f10y <- "x"
-    }
-    else
-    {
-      f10y <- transformation_format(cf10y, cf10y_constant)
-    }
+    f10y <- transformation_format(cf10y, cf10y_constant)
+    
+    f02ky <- transformation_format(cf02ky, cf02ky_constant)
 
-    if(cf02ky == "Linear")
-    {
-      f02ky <- "x"
-    }
-    else
-    {
-      f02ky <- transformation_format(cf02ky, cf02ky_constant)
-    }
-
-    if(cf20ky == "Linear")
-    {
-      f20ky <- "x"
-    }
-    else
-    {
-      f20ky <- transformation_format(cf20ky, cf20ky_constant)
-    }
-
+    f20ky <- transformation_format(cf20ky, cf20ky_constant)
+    
+    #The following three transformation related arguments give errors when "x" is returned instead of "x^1"
     if(cf01km1 == "Linear")
     {
       f01km1 <- "x^1"
@@ -202,8 +179,6 @@ draw_plot_1 <- function(data_input, num_var_1, num_var_2, num_var_3, fact_var, n
     {
       f10km <- transformation_format(cf10km, cf10km_constant)
     } 
-    
-
 
     data2<-data.org(x=data.frame(sim.111$x), m=data.frame(sim.111$m), 
                     f01y=list(1,f01y), 
@@ -252,7 +227,11 @@ create_num_var_table_1 <- function(data_input, num_var_1, num_var_2, num_var_3, 
     sim.111=list(x=x,m=m,y=y,level=lv)
 
     transformation_format <- function(input, input_constant){
-      if(input == "Log Transformation")
+      if(input == "Linear")
+      {
+        return("x")
+      }
+      else if(input == "Log Transformation")
       {
         return(paste("log(x+", input_constant, ")", sep = ""))
       }
@@ -266,42 +245,15 @@ create_num_var_table_1 <- function(data_input, num_var_1, num_var_2, num_var_3, 
       }
     }
 
-    if(cf01y == "Linear")
-    {
-      f01y <- "x"
-    }
-    else
-    {
-      f01y <- transformation_format(cf01y,cf01y_constant)
-    }
+    f01y <- transformation_format(cf01y, cf01y_constant)
 
-    if(cf10y == "Linear")
-    {
-      f10y <- "x"
-    }
-    else
-    {
-      f10y <- transformation_format(cf10y, cf10y_constant)
-    }
+    f10y <- transformation_format(cf10y, cf10y_constant)
+    
+    f02ky <- transformation_format(cf02ky, cf02ky_constant)
 
-    if(cf02ky == "Linear")
-    {
-      f02ky <- "x"
-    }
-    else
-    {
-      f02ky <- transformation_format(cf02ky, cf02ky_constant)
-    }
-
-    if(cf20ky == "Linear")
-    {
-      f20ky <- "x"
-    }
-    else
-    {
-      f20ky <- transformation_format(cf20ky, cf20ky_constant)
-    }
-
+    f20ky <- transformation_format(cf20ky, cf20ky_constant)
+    
+    #The following three transformation related arguments give errors when "x" is returned instead of "x^1"
     if(cf01km1 == "Linear")
     {
       f01km1 <- "x^1"
@@ -328,8 +280,6 @@ create_num_var_table_1 <- function(data_input, num_var_1, num_var_2, num_var_3, 
     {
       f10km <- transformation_format(cf10km, cf10km_constant)
     } 
-    
-
 
     data2<-data.org(x=data.frame(sim.111$x), m=data.frame(sim.111$m), 
                     f01y=list(1,f01y), 
@@ -341,6 +291,15 @@ create_num_var_table_1 <- function(data_input, num_var_1, num_var_2, num_var_3, 
                     f10km=list(matrix(c(1,1),1), f10km), level=sim.111$level) 
     temp2 <- mlma(y=sim.111$y, data1=data2)
     summary(temp2) #numeric output
+
+    #print(data2$m1[1])
+    #data2<-data.org(x=data.frame(sim.111$x), m=data.frame(sim.111$m), level=sim.111$level)
+    #if(data2$m1[1] == NULL)
+    #{
+    #}
+    #else
+    #{ 
+    #}
   }
 }
 
@@ -378,7 +337,11 @@ create_num_var_table_2 <- function(data_input, num_var_1, num_var_2, num_var_3, 
     sim.111=list(x=x,m=m,y=y,level=lv)
 
     transformation_format <- function(input, input_constant){
-      if(input == "Log Transformation")
+      if(input == "Linear")
+      {
+        return("x")
+      }
+      else if(input == "Log Transformation")
       {
         return(paste("log(x+", input_constant, ")", sep = ""))
       }
@@ -392,42 +355,15 @@ create_num_var_table_2 <- function(data_input, num_var_1, num_var_2, num_var_3, 
       }
     }
 
-    if(cf01y == "Linear")
-    {
-      f01y <- "x"
-    }
-    else
-    {
-      f01y <- transformation_format(cf01y,cf01y_constant)
-    }
+    f01y <- transformation_format(cf01y, cf01y_constant)
 
-    if(cf10y == "Linear")
-    {
-      f10y <- "x"
-    }
-    else
-    {
-      f10y <- transformation_format(cf10y, cf10y_constant)
-    }
+    f10y <- transformation_format(cf10y, cf10y_constant)
+    
+    f02ky <- transformation_format(cf02ky, cf02ky_constant)
 
-    if(cf02ky == "Linear")
-    {
-      f02ky <- "x"
-    }
-    else
-    {
-      f02ky <- transformation_format(cf02ky, cf02ky_constant)
-    }
-
-    if(cf20ky == "Linear")
-    {
-      f20ky <- "x"
-    }
-    else
-    {
-      f20ky <- transformation_format(cf20ky, cf20ky_constant)
-    }
-
+    f20ky <- transformation_format(cf20ky, cf20ky_constant)
+    
+    #The following three transformation related arguments give errors when "x" is returned instead of "x^1"
     if(cf01km1 == "Linear")
     {
       f01km1 <- "x^1"
@@ -462,7 +398,7 @@ create_num_var_table_2 <- function(data_input, num_var_1, num_var_2, num_var_3, 
                     f20ky=list(1,f20ky),
                     f01km1=list(matrix(c(1,1),1), f01km1),
                     f01km2=list(matrix(c(1,1),1), f01km2), 
-                    f10km=list(matrix(c(1,1),1), f10km), level=sim.111$level) 
+                    f10km=list(matrix(c(1,1),1), f10km), level=sim.111$level)  
     tmp2.boot<-boot.mlma(y=sim.111$y, data1=data2, boot=num_bootstrap_replicates,echo=F)
     summary(tmp2.boot) #Graphic Outputs
   }
