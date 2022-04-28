@@ -9,22 +9,35 @@ params:
   num_var_3: NA
   fact_var: NA
   num_bootstrap_replicates: NA
+  f10km: NA
+  f10km_constant: NA
+  f10y: NA
+  f10y_constant: NA
+  f20ky: NA
+  f20ky_constant: NA
+  f01y: NA
+  f01y_constant: NA
+  f02ky: NA
+  f02ky_constant: NA
+  f01km1: NA
+  f01km1_constant: NA
+  f01km2: NA
+  f01km2_constant: NA
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning = FALSE)
 ```
-#### Report by LSU
 
 #### A report generated from `r paste(params$fileName, "on", Sys.Date())`.
 
 ```{r}
 library(shiny)
 library(shinythemes)
+library(fresh)
 library(data.table)
 library(ggplot2)
 library(mlma)
-library(fresh)
 library(readxl)
 library(stringr)
 library(tidyverse)
@@ -32,6 +45,8 @@ library(xlsx)
 library(ggdag)
 library(rmarkdown)
 library(tinytex)
+library(Dict)
+library(dagitty)
 
 #Put the data frame into data_input
 data_input <- {
@@ -53,72 +68,301 @@ data_input <- {
 
 # Graphic Outputs
 ```{r}
-#NUMERICAL OUTPUT WITH AND WITHOUT BOOTSTRAPPING
-y <- data_input[,params$num_var_2]
-lv <- data_input[,params$fact_var]
+dataProcessing <- function(data_input, num_var_1, num_var_2, num_var_3, fact_var, num_bootstrap_replicates, cf10km, cf10km_constant, cf10y, cf10y_constant, cf20ky, cf20ky_constant, cf01y, cf01y_constant, cf02ky, cf02ky_constant, cf01km1, cf01km1_constant, cf01km2, cf01km2_constant){
+    if(num_var_1 != "Not selected" & num_var_2 != "Not selected"  & num_var_3 != "Not selected" & fact_var != "Not selected"){
+      y <- data_input[,num_var_2]
+      lv <- data_input[,fact_var]
 
-#Putting x vars into dataframe
-x <- matrix(0,length(data_input[,params$num_var_1[1]]),0)
-for(val in 1:length(params$num_var_1)){
-   x <- cbind(x,data_input[,params$num_var_1[val]])
+      #Putting x vars into dataframe
+      x <- matrix(0,length(data_input[,num_var_1[1]]),0)
+      for(val in 1:length(num_var_1)){
+        x <- cbind(x,data_input[,num_var_1[val]])
+      }
+      x <- data.frame(x)
+
+      names = c()
+      for(val in 1:length(num_var_1)){
+        names <- append(names, num_var_1[val])
+      }
+      names(x) = names
+
+      #Putting m vars into dataframe
+      m <- matrix(0,length(data_input[,num_var_3[1]]),0)
+      for(val in 1:length(num_var_3)){
+        m <- cbind(m,data_input[,num_var_3[val]])
+      }
+      m <- data.frame(m)
+
+      names = c()
+      for(val in 1:length(num_var_3)){
+        names <- append(names, num_var_3[val])
+      }
+      names(m) = names
+
+      sim.111=list(x=x,m=m,y=y,level=lv)
+
+      transformation_format <- function(input, input_constant){
+      if(input == "Linear")
+      {
+        return("x")
+      }
+      else if(input == "Log Transformation")
+      {
+        return(paste("log(x+", input_constant, ")", sep = ""))
+      }
+      else if(input == "Power Transformation")
+      {
+        return(paste("x^", input_constant, sep = ""))
+      }
+      else if(input == "Square Root Transformation")
+      {
+        return(paste("sqrt(x+", input_constant, ")", sep = ""))
+      }
+    }
+
+    f01y <- transformation_format(cf01y, cf01y_constant)
+
+    f10y <- transformation_format(cf10y, cf10y_constant)
+            
+    f02ky <- transformation_format(cf02ky, cf02ky_constant)
+
+    f20ky <- transformation_format(cf20ky, cf20ky_constant)
+            
+    #The following three transformation related arguments give errors when "x" is returned instead of "x^1"
+    if(cf01km1 == "Linear")
+    {
+      f01km1 <- "x^1"
+    }
+    else
+    {
+      f01km1 <- transformation_format(cf01km1, cf01km1_constant)
+    }
+
+    if(cf01km2 == "Linear")
+    {
+      f01km2 <- "x^1"
+    }
+    else
+    {
+      f01km2 <- transformation_format(cf01km2, cf01km2_constant)
+    }
+
+    if(cf10km == "Linear")
+    {
+      f10km <- "x^1"
+    }
+    else
+    {
+      f10km <- transformation_format(cf10km, cf10km_constant)
+    } 
+
+    data2<-data.org(x=data.frame(sim.111$x), m=data.frame(sim.111$m), level=sim.111$level)
+
+    LevelOnePredictors <- c()
+    LevelTwoPredictors <- c()
+
+    for(val in 1:length(num_var_1))
+    {
+      if(data2$lx[val,1] == 1)
+      {
+        LevelOnePredictors <- append(LevelOnePredictors, val)
+      }
+      else if(data2$lx[val,1] == 2)
+      {
+        LevelTwoPredictors <- append(LevelTwoPredictors, val)
+      }
+    }    
+
+    transformationDictionary <- Dict$new(
+      f01y = NULL,
+      f10y = NULL,
+      f02ky = NULL,
+      f20ky = NULL,
+      f01km1 = NULL,
+      f01km2 = NULL,
+      f10km = NULL,
+      .overwrite = TRUE)
+
+    #Predictor Level 2 (f01y)
+    if(!is.null(LevelTwoPredictors[[1]]))
+    {
+      transformationDictionary["f01y"] <- list(LevelTwoPredictors[1], f01y)
+    }
+
+    #Predictor Level 1 (f10y)
+    if(!is.null(LevelOnePredictors[[1]]))
+    {
+      transformationDictionary["f10y"] <- list(LevelOnePredictors[1], f10y)
+    }
+
+    #Mediator Level 1 (f02ky)
+    if(!is.null(data2$m2[[1]]))
+    {
+      transformationDictionary["f02ky"] <- list(data2$m2[[1]], f02ky)
+    }
+
+    #Mediator Level 2 (f20ky)
+    if(!is.null(data2$m1[[1]]))
+    {
+      transformationDictionary["f20ky"] <- list(data2$m1[[1]], f20ky)
+    }
+
+    matrixFunction <- function(m,predictors,f){
+      if(length(m[[1]]) > length(predictors))
+      {
+        matrixList <- c(m[[1]])
+        currentIndex <- 1
+        predictorSize <- length(predictors)
+        for(val in 1:length(m[[1]]))
+        {
+          if(currentIndex <= predictorSize)
+          {
+            matrixList <- append(matrixList, predictors[currentIndex])
+            currentIndex = currentIndex + 1
+          }
+          else
+          {
+            currentIndex = 1
+            matrixList <- append(matrixList, predictors[currentIndex])
+            currentIndex = currentIndex + 1
+          }
+        }
+
+        matrix <- matrix(matrixList, length(m[[1]]), 2)
+        transformList <- list(matrix)
+        for(val in 1:length(m[[1]]))
+        {
+          transformList <- append(transformList, f)
+        }
+
+        transformationDictionary[f] <- transformList
+      }
+      else
+      {
+        matrixList <- c()
+        currentIndex <- 1
+        mediatorSize <- length(m[[1]])
+        for(val in 1:length(predictors))
+        {
+          if(currentIndex <= mediatorSize)
+          {
+            matrixList <- append(matrixList, (m[[1]])[currentIndex])
+            currentIndex = currentIndex + 1
+          }
+          else
+          {
+            currentIndex = 1
+            matrixList <- append(matrixList, (m[[1]])[currentIndex])
+            currentIndex = currentIndex + 1
+          }
+        }
+
+        matrixList <- append(matrixList, predictors)
+
+        matrix <- matrix(matrixList, length(predictors), 2)
+        transformList <- list(matrix)
+        for(val in 1:length(predictors))
+        {
+          transformList <- append(transformList, f)
+        }
+
+        transformationDictionary[f] <- transformList
+      }
+    }
+
+    #(f01km1)
+    if(!is.null(data2$m1[1]) && !is.null(LevelTwoPredictors))
+    {
+      matrixFunction(data2$m1, LevelTwoPredictors, f01km1)
+    }
+
+    #(f01km2)
+    if(!is.null(data2$m2[1]) && !is.null(LevelTwoPredictors))
+    {
+      matrixFunction(data2$m2, LevelTwoPredictors, f01km2)
+    }
+
+
+    #(f10km)
+    if(!is.null(data2$m1[1]) && !is.null(LevelOnePredictors))
+    {
+      matrixFunction(data2$m1, LevelOnePredictors, f10km)
+    }
+
+    data2<-data.org(x=data.frame(sim.111$x), m=data.frame(sim.111$m),
+      f01y=transformationDictionary["f01y"], 
+      f10y=transformationDictionary["f10y"],
+      f02ky=transformationDictionary["f02ky"],
+      f20ky=transformationDictionary["f20ky"],
+      f01km1=transformationDictionary["f01km1"],
+      f01km2=transformationDictionary["f01km2"], 
+      f10km=transformationDictionary["f10km"], 
+      level=sim.111$level)  
+
+    if(!is.null(num_bootstrap_replicates))
+    {
+      temp2 <- boot.mlma(y=sim.111$y, data1=data2, boot=num_bootstrap_replicates,echo=F)
+    }
+    else
+    {
+      temp2 <- mlma(y=sim.111$y, data1=data2)
+    }
+
+    return(temp2)
+  }
 }
-x <- data.frame(x)
 
-names = c()
-for(val in 1:length(params$num_var_1)){
-  names <- append(names, params$num_var_1[val])
-}
-names(x) = names
+bootstrapData <- dataProcessing(data_input, params$num_var_1, params$num_var_2, params$num_var_3, params$fact_var, params$num_bootstrap_replicates, params$f10km, params$f10km_constant, params$f10y, params$f10y_constant, params$f20ky, params$f20ky_constant, params$f01y, params$f01y_constant, params$f02ky, params$f02ky_constant, params$f01km1, params$f01km1_constant, params$f01km2, params$f01km2_constant)
+nonBootstrapData <- dataProcessing(data_input, params$num_var_1, params$num_var_2, params$num_var_3, params$fact_var, NULL, params$f10km, params$f10km_constant, params$f10y, params$f10y_constant, params$f20ky, params$f20ky_constant, params$f01y, params$f01y_constant, params$f02ky, params$f02ky_constant, params$f01km1, params$f01km1_constant, params$f01km2, params$f01km2_constant)
 
-#Putting m vars into dataframe
-m <- matrix(0,length(data_input[,params$num_var_3[1]]),0)
-for(val in 1:length(params$num_var_3)){
-    m <- cbind(m,data_input[,params$num_var_3[val]])
-}
-m <- data.frame(m)
-
-names = c()
-for(val in 1:length(params$num_var_3)){
-  names <- append(names, params$num_var_3[val])
-}
-names(m) = names
-
-sim.111=list(x=x,m=m,y=y,level=lv)
-data2<-data.org(x=data.frame(sim.111$x), m=data.frame(sim.111$m), 
-                f10y=list(1,c("x^2","sqrt(x+6)")), 
-                f20ky=list(1,c("x","x^3")), 
-                f10km=list(matrix(c(1,1),1),"log(x+2)"), level=sim.111$level)
-temp2<-mlma(y=sim.111$y, data1=data2)
-tmp2.boot<-boot.mlma(y=sim.111$y, data1=data2, boot=params$num_bootstrap_replicates,echo=F)
-plot(tmp2.boot)
+plot(bootstrapData)
 ```
 
 # Model Statistics I
 ```{r}
-summary(temp2)
+summary(nonBootstrapData)
 ```
 
 # Model Statistics II
 ```{r}
-summary(tmp2.boot)
+summary(bootstrapData)
 ```
 
 # DAG Visualization
 ```{r}
-tidy_ggdag <- dagify(
-    y ~ x + m1 + m2 + m3 + lv,
-    m1 ~ x + lv,
-    m2 ~ x + lv,
-    m3 ~ x + lv,
-    exposure = "x",
-    outcome = "y",
-    labels = c("x" = params$num_var_1[1], 
-              "y" = params$num_var_2,
-              "m1" = params$num_var_3[1],
-              "m2" = params$num_var_3[2],
-              "m3" = params$num_var_3[3],
-              "lv" = params$fact_var)
-  )
+  DAG <- "dag{ "
 
-ggdag_status(tidy_ggdag)
+  DAG <- paste(DAG, params$num_var_2, "-> {")
+  for(val in 1:length(params$num_var_1))
+  {
+    DAG <- paste(DAG, params$num_var_1[val])
+  }
+  for(val in 1:length(params$num_var_3))
+  {
+    DAG <- paste(DAG, params$num_var_3[val])
+  }
+  DAG <- paste(DAG, params$fact_var)
+  DAG <- paste(DAG, "}")
+
+  for(val in 1:length(params$num_var_3))
+  {
+    DAG <- paste(DAG,params$num_var_3[val], "-> {", params$fact_var)
+    for(val in 1:length(params$num_var_1))
+    {
+      DAG <- paste(DAG, params$num_var_1[val])
+    }
+    DAG <- paste(DAG, "}")
+  }
+
+  for(val in 1:length(params$num_var_1))
+  {
+    DAG <- paste(DAG, params$num_var_1[val], "[exposure]")
+  }
+  
+  DAG <- paste(DAG, params$num_var_2, "[outcome]")
+
+  DAG <- paste(DAG, "}")
+  
+  DAG <- dagitty(DAG, layout = TRUE)
+  ggdag_status(DAG)
 ```
