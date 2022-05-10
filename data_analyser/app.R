@@ -3,18 +3,22 @@
 library(shiny)
 library(shinythemes)
 library(fresh)
+library(shinyjs)
+
+not_sel <- "Not Selected"
+
+about_page <- tabPanel(
+  title = "About",
+  titlePanel("About"),
+  "Created with R Shiny",
+  br(),
+  "2022 May"
+)
 
 ui <- navbarPage(
-  title = "LSU - Mediation Analysis Project",
-  
-  use_theme(create_theme(theme = "flatly", 
-  bs_vars_navbar(default_bg = "#dfb52a", default_border = "#301456", default_link_color = "#301456", default_link_active_color = "#301456", 
-                 default_link_hover_color = "#FFFFFF",), 
-  bs_vars_global(body_bg = "#301456",text_color = "#dfb52a",link_color = "#dfb52a",link_hover_color = "#dfb52a",), 
-  bs_vars_tabs(active_link_hover_color = "#dfb52a",), bs_vars_button(
-    default_color = "#301456",default_bg = "#dfb52a",))),
 
     main_page <- tabPanel(
+    title = "Mediation Analysis",
     titlePanel("Mediation Analysis"),
     sidebarLayout(
         sidebarPanel(
@@ -24,22 +28,28 @@ ui <- navbarPage(
         selectInput("num_var_2", "Response: Y", choices = c("Not selected")),
         selectInput("num_var_3", "Mediators", choices = c("Not selected"), multiple = TRUE),
         selectInput("fact_var", "Level of X", choices = c("Not selected")),
+        
+        useShinyjs(),
+        actionButton(inputId = "go", label = "Toggle Transformations"),
+        br(),
 
-        selectInput("f10km", "Transformation of predictor (level 1) --> Mediator (level 1)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
-        uiOutput("f10km_constant"),
-        selectInput("f10y", "Transformation of predictor (level 1) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
-        uiOutput("f10y_constant"),
-        selectInput("f20ky", "Transformation of mediator (level 1) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
-        uiOutput("f20ky_constant"),
-        selectInput("f01y", "Transformation of predictor (level 2) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
-        uiOutput("f01y_constant"),
-        selectInput("f02ky", "Transformation of mediator (level 2) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
-        uiOutput("f02ky_constant"),
-        selectInput("f01km1", "Transformation of predictor (level 2) --> Mediator (level 1)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
-        uiOutput("f01km1_constant"),
-        selectInput("f01km2", "Transformation of predictor (level 2) --> Mediator (level 2)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
-        uiOutput("f01km2_constant"),
-
+        hidden(selectInput("f10km", "Transformation of predictor (level 1) --> Mediator (level 1)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+        uiOutput("f10km_constant")),
+        hidden(selectInput("f10y", "Transformation of predictor (level 1) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+        uiOutput("f10y_constant")),
+        hidden(selectInput("f20ky", "Transformation of mediator (level 1) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+        uiOutput("f20ky_constant")),
+        hidden(selectInput("f01y", "Transformation of predictor (level 2) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+        uiOutput("f01y_constant")),
+        hidden(selectInput("f02ky", "Transformation of mediator (level 2) --> Response", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+        uiOutput("f02ky_constant")),
+        hidden(selectInput("f01km1", "Transformation of predictor (level 2) --> Mediator (level 1)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+        uiOutput("f01km1_constant")),
+        hidden(selectInput("f01km2", "Transformation of predictor (level 2) --> Mediator (level 2)", choices = c("Linear", "Log Transformation", "Power Transformation", "Square Root Transformation")),
+        uiOutput("f01km2_constant")),
+        
+        br(),
+        
         numericInput(
             inputId = "num_bootstrap_replicates",
             label = "Number of Bootstrap Replications (Default is 500)",
@@ -79,7 +89,21 @@ ui <- navbarPage(
         )
     )
     )
-)
+) 
+
+  ui <- navbarPage(
+    
+    img(src = "LSULOGO.png", height = 25, width = 65),
+    
+    use_theme(create_theme(theme = "flatly", 
+                           bs_vars_navbar(default_bg = "#dfb52a", default_border = "#301456", default_link_color = "#301456", default_link_active_color = "#301456", 
+                                          default_link_hover_color = "#FFFFFF",), 
+                           bs_vars_global(body_bg = "#301456",text_color = "#dfb52a",link_color = "#dfb52a",link_hover_color = "#dfb52a",), 
+                           bs_vars_tabs(active_link_hover_color = "#dfb52a",), bs_vars_button(
+                             default_color = "#301456",default_bg = "#dfb52a",))),
+    main_page,
+    about_page
+  )
 
 server <- function(input, output){
     library(data.table)
@@ -120,6 +144,17 @@ server <- function(input, output){
     updateSelectInput(inputId = "num_var_3", choices = choices)
     updateNumericInput(inputId = "num_bootstrap_replicates")
     updateSelectInput(inputId = "fact_var", choices = choices)
+  })
+  
+  observeEvent(input$go, {
+    shinyjs::toggle("f10km")
+    shinyjs::toggle("f10y")
+    shinyjs::toggle("f20ky")
+    shinyjs::toggle("f01y")
+    shinyjs::toggle("f02ky")
+    shinyjs::toggle("f01km1")
+    shinyjs::toggle("f01km2")
+    
   })
 
   showConstant <- function(input, buttonName){
